@@ -1,0 +1,50 @@
+name: Check HKO Warnings
+
+on:
+  schedule:
+    - cron: '30 2-22/4 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-warnings:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout public repo
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests python-telegram-bot beautifulsoup4
+
+    - name: Clone private repo
+      env:
+        GITHUB_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+      run: |
+        git clone https://x-access-token:${GITHUB_TOKEN}@github.com/<owner>/hko-tg-private.git
+        cd hko-tg-private
+
+    - name: Run warning check script
+      env:
+        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      run: |
+        cd hko-tg-private
+        python check_warnings.py
+
+    - name: Commit and push changes
+      env:
+        GITHUB_TOKEN: ${{ secrets.PRIVATE_REPO_TOKEN }}
+      run: |
+        cd hko-tg-private
+        git config user.name "GitHub Actions Bot"
+        git config user.email "<>"
+        git add warnings.json
+        git commit -m "Update warnings.json [$(date -u)]" || echo "No changes to commit"
+        git push origin main
