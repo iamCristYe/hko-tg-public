@@ -28,7 +28,7 @@ jobs:
               #!/bin/bash
               while true; do
                   current_hour=$(date +%H)
-                  if (( current_hour % 4 == 0 )); then
+                  if (( 10#current_hour % 4 == 0 )); then
                       break
                   fi
                   sleep 50
